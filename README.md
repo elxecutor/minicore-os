@@ -9,7 +9,11 @@ A minimal operating system kernel with bootloader written from scratch in x86 As
 - **Memory management system** with heap allocation
 - **Interactive CLI shell** with keyboard input
 - **VGA text mode display** with colored output
+- **Interrupt system** with IDT and ISR handlers
+- **Cooperative multitasking** with task scheduling
+- **Read-only file system** with preloaded demo files
 - **Built-in commands** for system control and debugging
+- **File system commands:** `ls` (list files) and `cat` (display file contents)
 - **Debug commands** for memory inspection
 - **GRUB2 bootloader support** for easy testing
 - **QEMU integration** for development and testing
@@ -80,6 +84,44 @@ make run
 - `make clean` - Clean all build artifacts
 - `make help` - Show all available targets
 
+## File System Usage
+
+The OS includes a read-only in-memory file system with preloaded demo files:
+
+### Available Commands
+- `ls` - List all files in the file system
+- `cat <filename>` - Display the contents of a file
+
+### Demo Files
+- `welcome.txt` - Introduction to MiniCore-OS
+- `system.txt` - System information and specifications  
+- `readme.txt` - File system documentation
+- `hello.c` - Sample C code
+- `license.txt` - License information
+
+### Example Usage
+```
+minicore> ls
+=== File System Contents ===
+Name                     Size   Type
+------------------------ ------ --------
+welcome.txt              387    TEXT
+system.txt              245    TEXT
+readme.txt              312    TEXT
+hello.c                  89     TEXT
+license.txt             156    TEXT
+
+Total files: 5 / 16
+
+minicore> cat welcome.txt
+=== Contents of welcome.txt ===
+Welcome to MiniCore-OS!
+This is a simple read-only file system.
+Try 'ls' to list files and 'cat <filename>' to read them.
+...
+=== End of file ===
+```
+
 ## Technical Details
 
 ### Boot Process
@@ -103,6 +145,22 @@ The kernel includes a basic VGA text mode driver supporting:
 - 16 foreground colors
 - 16 background colors
 - Basic string output functions
+
+### File System
+
+The read-only file system implementation provides:
+- **In-memory storage:** Files preloaded at boot time
+- **Fixed allocation:** Maximum 16 files, 4KB each
+- **Directory abstraction:** Flat namespace with filename lookup
+- **Type support:** Text and binary file types
+- **Integration:** Shell commands `ls` and `cat`
+
+**Architecture:**
+- `fs_t` structure holds filesystem metadata
+- `fs_file_t` entries contain file information
+- Static memory allocation for file data
+- String-based filename matching
+- Read-only permissions enforced
 
 ## Testing
 
@@ -172,14 +230,22 @@ System Information:
 
 ## Next Steps
 
-This is Phase 1 of the OS development. Future phases might include:
+This project has completed Phase 5 of the OS development:
 
-- Interrupt handling (IDT setup)
-- Memory management (paging, heap)
-- Process management
-- File system
-- Device drivers
-- User mode programs
+**Completed Phases:**
+- ✅ Phase 1: Basic bootloader and kernel
+- ✅ Phase 2: Memory management (heap allocation)  
+- ✅ Phase 3: Interactive CLI shell
+- ✅ Phase 4: Interrupt handling (IDT/ISR)
+- ✅ Phase 5: Read-only file system
+
+**Future phases might include:**
+- Process management and user mode
+- Writable file system
+- Device drivers (keyboard, timer, disk)
+- Network stack
+- Graphics mode support
+- System calls and user programs
 
 ## License
 

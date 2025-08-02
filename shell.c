@@ -1,6 +1,7 @@
 #include "shell.h"
 #include "isr.h"
 #include "mm.h"
+#include "fs.h"
 
 // External terminal functions from kernel.c
 extern void terminal_putchar(char c);
@@ -9,6 +10,7 @@ extern void terminal_write_hex(uint32_t value);
 extern void terminal_write_dec(uint32_t value);
 extern void terminal_setcolor(uint8_t color);
 extern void terminal_clear(void);
+extern void terminal_scroll_up(void);
 extern uint8_t vga_entry_color(int fg, int bg);
 extern size_t terminal_row;
 extern size_t terminal_column;
@@ -66,6 +68,8 @@ static shell_command_t commands[] = {
     {"tasks",   "Show running tasks",                cmd_tasks},
     {"starttasks", "Start demo multitasking tasks",     cmd_starttasks},
     {"enableints", "Enable interrupts",                 cmd_enableints},
+    {"ls",      "List files in file system",        cmd_ls},
+    {"cat",     "Display file contents",             cmd_cat},
     {NULL, NULL, NULL} // End marker
 };
 
@@ -118,9 +122,9 @@ void shell_init(void) {
     keyboard_init();
     
     terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_CYAN, VGA_COLOR_BLACK));
-    terminal_writestring("\n=== MiniCore-OS Shell ===\n");
+    terminal_writestring("\n=== MiniCore-OS Shell Active ===\n");
     terminal_setcolor(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
-    terminal_writestring("Type 'help' for available commands.\n\n");
+    terminal_writestring("Type 'help' for commands | 'ls' for files | 'clear' to clear screen\n\n");
 }
 
 // Initialize keyboard
@@ -315,11 +319,8 @@ void shell_execute_command(void) {
 
 // Main shell loop
 void shell_run(void) {
+    terminal_writestring("Interactive shell ready! Try typing 'help' or 'ls'\n");
     shell_print_prompt();
-    
-    terminal_writestring("Shell ready in polling mode!\n");
-    terminal_writestring("Try typing 'help' and press Enter\n");
-    terminal_writestring("Use 'enableints' to switch to interrupt-driven mode\n");
     
     while (1) {
         // Start in polling mode for stability
@@ -490,6 +491,51 @@ int cmd_enableints(int argc, char* argv[]) {
     terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_GREEN, VGA_COLOR_BLACK));
     terminal_writestring("Interrupts enabled! Keyboard should now be interrupt-driven.\n");
     terminal_setcolor(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
+    return 0;
+}
+
+int cmd_ls(int argc, char* argv[]) {
+    return fs_list();
+}
+
+int cmd_cat(int argc, char* argv[]) {
+    if (argc < 2) {
+        terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_RED, VGA_COLOR_BLACK));
+        terminal_writestring("Usage: cat <filename>\n");
+        terminal_setcolor(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
+        return -1;
+    }
+    
+    uint8_t* data;
+    uint32_t size;
+    
+    int result = fs_read(argv[1], &data, &size);
+    if (result != 0) {
+        terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_RED, VGA_COLOR_BLACK));
+        terminal_writestring("File not found: ");
+        terminal_writestring(argv[1]);
+        terminal_writestring("\n");
+        terminal_setcolor(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
+        return -1;
+    }
+    
+    // Display file contents
+    terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_CYAN, VGA_COLOR_BLACK));
+    terminal_writestring("=== Contents of ");
+    terminal_writestring(argv[1]);
+    terminal_writestring(" ===\n");
+    terminal_setcolor(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
+    
+    // Print file content character by character
+    for (uint32_t i = 0; i < size; i++) {
+        terminal_putchar(data[i]);
+    }
+    
+    terminal_putchar('\n');
+    terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_CYAN, VGA_COLOR_BLACK));
+    terminal_writestring("=== End of file ===\n");
+    terminal_setcolor(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
+    
     return 0;
 }
 

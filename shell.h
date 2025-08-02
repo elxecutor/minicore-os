@@ -116,6 +116,8 @@ int cmd_uptime(int argc, char* argv[]);
 int cmd_tasks(int argc, char* argv[]);
 int cmd_starttasks(int argc, char* argv[]);
 int cmd_enableints(int argc, char* argv[]);
+int cmd_ls(int argc, char* argv[]);
+int cmd_cat(int argc, char* argv[]);
 
 // Utility functions
 void shell_clear_buffer(void);

@@ -31,8 +31,9 @@ ISR_OBJ = isr.o
 INTERRUPT_OBJ = interrupt.o
 SCHEDULER_OBJ = scheduler.o
 TASK_SWITCH_OBJ = task_switch.o
+FS_OBJ = fs.o
 
-OBJECTS = $(BOOT_OBJ) $(KERNEL_OBJ) $(MM_OBJ) $(SHELL_OBJ) $(IDT_OBJ) $(ISR_OBJ) $(INTERRUPT_OBJ) $(SCHEDULER_OBJ) $(TASK_SWITCH_OBJ)
+OBJECTS = $(BOOT_OBJ) $(KERNEL_OBJ) $(MM_OBJ) $(SHELL_OBJ) $(IDT_OBJ) $(ISR_OBJ) $(INTERRUPT_OBJ) $(SCHEDULER_OBJ) $(TASK_SWITCH_OBJ) $(FS_OBJ)
 
 # GRUB configuration
 GRUB_CFG = grub.cfg
@@ -94,6 +95,10 @@ $(SCHEDULER_OBJ): scheduler.c scheduler.h isr.h
 # Task switching assembly
 $(TASK_SWITCH_OBJ): task_switch.asm
 	$(AS) $(ASFLAGS) task_switch.asm -o $(TASK_SWITCH_OBJ)
+
+# File system object
+$(FS_OBJ): fs.c fs.h
+	$(CC) $(CFLAGS) -c fs.c -o $(FS_OBJ)
 
 # Link the kernel
 $(KERNEL): $(OBJECTS) link.ld

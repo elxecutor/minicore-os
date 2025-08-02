@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Verification script for MiniCore-OS Phase 1
-echo "=== MiniCore-OS Phase 1 Verification ==="
+# Verification script for MiniCore-OS Phase 5
+echo "=== MiniCore-OS Phase 5 Verification ==="
 echo
 
 # Check if all required files exist
 echo "Checking required files..."
-files=("boot.asm" "kernel.c" "link.ld" "Makefile" "README.md")
+files=("boot.asm" "kernel.c" "link.ld" "Makefile" "README.md" "fs.c" "fs.h" "shell.c" "shell.h")
 for file in "${files[@]}"; do
     if [ -f "$file" ]; then
         echo "✓ $file exists"
@@ -84,6 +84,34 @@ else
     echo "✗ Welcome message missing in kernel"
 fi
 
+# Check for file system implementation
+if grep -q "fs_init" kernel.c; then
+    echo "✓ File system initialization found in kernel"
+else
+    echo "✗ File system initialization missing in kernel"
+fi
+
+# Check for file system commands in shell
+if grep -q "cmd_ls" shell.c && grep -q "cmd_cat" shell.c; then
+    echo "✓ File system commands (ls, cat) found in shell"
+else
+    echo "✗ File system commands missing in shell"
+fi
+
+# Check for file system functions
+if grep -q "fs_list" fs.c && grep -q "fs_read" fs.c; then
+    echo "✓ Core file system functions found"
+else
+    echo "✗ Core file system functions missing"
+fi
+
+# Check for demo files creation
+if grep -q "fs_create_demo_files" fs.c; then
+    echo "✓ Demo files creation function found"
+else
+    echo "✗ Demo files creation function missing"
+fi
+
 echo
 
 # Calculate file sizes
@@ -95,13 +123,19 @@ for file in "${files[@]}"; do
 done
 
 echo
-echo "=== Verification Complete ==="
+echo "=== Phase 5 Verification Complete ==="
 echo
 
 # Show next steps
 echo "Next steps to build and test:"
 echo "1. Install cross-compiler: ./setup.sh"
 echo "2. Check dependencies: make check-deps"
+echo "3. Build the OS: make"
+echo "4. Run in QEMU: make run"
+echo "5. Test file system commands:"
+echo "   - Type 'ls' to list files"
+echo "   - Type 'cat welcome.txt' to read a file"
+echo "   - Type 'help' for all commands"
 echo "3. Build the OS: make"
 echo "4. Test in QEMU: make run"
 echo

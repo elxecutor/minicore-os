@@ -5,6 +5,7 @@
 #include "idt.h"
 #include "isr.h"
 #include "scheduler.h"
+#include "fs.h"
 
 /* Hardware text mode color constants. */
 enum vga_color {
@@ -33,6 +34,9 @@ uint8_t vga_entry_color(int fg, int bg) {
 static inline uint16_t vga_entry(unsigned char uc, uint8_t color) {
     return (uint16_t) uc | (uint16_t) color << 8;
 }
+
+// Forward declarations
+void terminal_scroll_up(void);
 
 size_t strlen(const char* str) {
     size_t len = 0;
@@ -75,7 +79,8 @@ void terminal_putchar(char c) {
     if (c == '\n') {
         terminal_column = 0;
         if (++terminal_row == VGA_HEIGHT) {
-            terminal_row = 0;
+            terminal_scroll_up();
+            terminal_row = VGA_HEIGHT - 1;
         }
         return;
     }
@@ -83,8 +88,10 @@ void terminal_putchar(char c) {
     terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
     if (++terminal_column == VGA_WIDTH) {
         terminal_column = 0;
-        if (++terminal_row == VGA_HEIGHT)
-            terminal_row = 0;
+        if (++terminal_row == VGA_HEIGHT) {
+            terminal_scroll_up();
+            terminal_row = VGA_HEIGHT - 1;
+        }
     }
 }
 
@@ -105,6 +112,23 @@ void terminal_clear(void) {
             const size_t index = y * VGA_WIDTH + x;
             terminal_buffer[index] = vga_entry(' ', terminal_color);
         }
+    }
+}
+
+void terminal_scroll_up(void) {
+    // Move all lines up by one
+    for (size_t y = 0; y < VGA_HEIGHT - 1; y++) {
+        for (size_t x = 0; x < VGA_WIDTH; x++) {
+            const size_t dest_index = y * VGA_WIDTH + x;
+            const size_t src_index = (y + 1) * VGA_WIDTH + x;
+            terminal_buffer[dest_index] = terminal_buffer[src_index];
+        }
+    }
+    
+    // Clear the bottom line
+    for (size_t x = 0; x < VGA_WIDTH; x++) {
+        const size_t index = (VGA_HEIGHT - 1) * VGA_WIDTH + x;
+        terminal_buffer[index] = vga_entry(' ', terminal_color);
     }
 }
 
@@ -232,53 +256,36 @@ void kernel_main(void) {
     terminal_writestring("Initializing scheduler...\n");
     scheduler_init();
     
+    /* Initialize file system */
+    terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_BROWN, VGA_COLOR_BLACK));
+    terminal_writestring("Initializing file system...\n");
+    fs_init();
+    
     /* Set up interrupt handlers but DON'T enable them yet */
-    terminal_writestring("Registering interrupt handlers...\n");
+    terminal_writestring("Setting up interrupts...\n");
     register_interrupt_handler(IRQ0, scheduler_tick);
     register_interrupt_handler(IRQ1, keyboard_interrupt_handler);
-    terminal_writestring("Interrupt handlers registered!\n");
-    
-    terminal_writestring("Note: Interrupts are disabled for stability.\n");
-    terminal_writestring("Use 'enableints' command to enable them when ready.\n");
     
     terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_BROWN, VGA_COLOR_BLACK));
-    terminal_writestring("Phase 4: Interrupt system ready (disabled)!\n");
+    terminal_writestring("Phase 5: File System Complete!\n");
     
     terminal_setcolor(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
     terminal_writestring("\nSystem Information:\n");
-    terminal_writestring("- Architecture: x86 (32-bit)\n");
-    terminal_writestring("- Mode: Protected Mode\n");
-    terminal_writestring("- Memory Management: Active (Heap + Free-list)\n");
-    terminal_writestring("- Heap Size: 1MB (0x200000 - 0x300000)\n");
-    terminal_writestring("- Display: VGA Text Mode (80x25)\n");
-    terminal_writestring("- Interrupts: Active (IDT + ISR)\n");
-    terminal_writestring("- Multitasking: Cooperative scheduling\n");
-    terminal_writestring("- Tasks: Timer-driven context switching\n");
+    terminal_writestring("- Architecture: x86 (32-bit) | Mode: Protected Mode\n");
+    terminal_writestring("- Memory: 1MB Heap | Display: VGA 80x25 | File System: Active\n");
+    terminal_writestring("- Interrupts: Ready (use 'enableints' to activate)\n");
     
     /* Demonstrate memory management */
     terminal_writestring("\n");
     terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_CYAN, VGA_COLOR_BLACK));
-    terminal_writestring("=== Memory Management Demo ===\n");
-    
-    // Show initial memory statistics
-    process_command("memstat");
-    terminal_writestring("\n");
-    
-    // Run a memory test
-    process_command("memtest");
-    terminal_writestring("\n");
-    
-    // Show memory statistics after test
-    terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_GREEN, VGA_COLOR_BLACK));
-    terminal_writestring("Memory statistics after test:\n");
-    process_command("memstat");
-    
-    terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_BROWN, VGA_COLOR_BLACK));
-    terminal_writestring("Phase 2 demonstration complete!\n");
+    terminal_writestring("=== System Ready ===\n");
+    terminal_setcolor(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
+    terminal_writestring("Memory: Active | File System: 5 files loaded | Interrupts: Ready\n");
     
     /* Initialize and start the shell */
     terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_MAGENTA, VGA_COLOR_BLACK));
-    terminal_writestring("Starting CLI Shell with interrupt-driven keyboard...\n");
+    terminal_writestring("Starting CLI Shell...\n");
+    terminal_setcolor(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
     
     shell_init();
     
