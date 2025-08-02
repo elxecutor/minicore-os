@@ -1,0 +1,93 @@
+# MiniCore-OS .gitignore
+
+# Build artifacts
+*.o
+*.bin
+*.iso
+*.img
+
+# Object files and executables
+kernel.bin
+boot.o
+kernel.o
+
+# ISO and disk images
+os.iso
+disk.img
+*.iso
+*.img
+
+# Build directories
+isodir/
+build/
+cross-compiler-build/
+
+# Cross-compiler installation
+opt/
+~/opt/cross/
+
+# GRUB temporary files
+*.grub
+
+# Editor and IDE files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.sublime-*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Temporary files
+*.tmp
+*.temp
+
+# Archive files (unless specifically needed)
+*.tar.gz
+*.tar.xz
+*.zip
+*.7z
+
+# Debug files
+*.debug
+*.sym
+
+# QEMU related
+qemu.log
+serial.log
+
+# Alternative Makefiles (keep the main one)
+Makefile.alternative
+
+# Package manager files
+node_modules/
+*.rpm
+*.deb
+
+# Documentation build artifacts
+docs/_build/
+*.pdf
+
+# Test outputs
+test_output/
+coverage/
+
+# Virtual machine files
+*.vmdk
+*.vdi
+*.qcow2
+
+# Bochs files
+bochsrc.txt
+bochsout.txt
