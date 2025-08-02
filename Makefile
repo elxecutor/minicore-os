@@ -24,6 +24,7 @@ KERNEL = kernel.bin
 ISO = os.iso
 BOOT_OBJ = boot.o
 KERNEL_OBJ = kernel.o
+MM_OBJ = mm.o
 
 # GRUB configuration
 GRUB_CFG = grub.cfg
@@ -55,12 +56,16 @@ $(BOOT_OBJ): boot.asm
 	$(AS) $(ASFLAGS) boot.asm -o $(BOOT_OBJ)
 
 # Compile the kernel
-$(KERNEL_OBJ): kernel.c
+$(KERNEL_OBJ): kernel.c mm.h
 	$(CC) $(CFLAGS) -c kernel.c -o $(KERNEL_OBJ)
 
+# Compile memory management
+$(MM_OBJ): mm.c mm.h
+	$(CC) $(CFLAGS) -c mm.c -o $(MM_OBJ)
+
 # Link the kernel
-$(KERNEL): $(BOOT_OBJ) $(KERNEL_OBJ) link.ld
-	$(LD) -T link.ld -o $(KERNEL) $(BOOT_OBJ) $(KERNEL_OBJ) $(LDFLAGS)
+$(KERNEL): $(BOOT_OBJ) $(KERNEL_OBJ) $(MM_OBJ) link.ld
+	$(LD) -T link.ld -o $(KERNEL) $(BOOT_OBJ) $(KERNEL_OBJ) $(MM_OBJ) $(LDFLAGS)
 
 # Create GRUB configuration
 $(GRUB_CFG):
@@ -95,7 +100,7 @@ test-kernel: $(KERNEL)
 
 # Clean build artifacts
 clean:
-	rm -f $(BOOT_OBJ) $(KERNEL_OBJ) $(KERNEL) $(ISO)
+	rm -f $(BOOT_OBJ) $(KERNEL_OBJ) $(MM_OBJ) $(KERNEL) $(ISO)
 	rm -rf $(ISO_DIR)
 	@echo "Cleaned build artifacts"
 

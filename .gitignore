@@ -10,6 +10,7 @@
 kernel.bin
 boot.o
 kernel.o
+mm.o
 
 # ISO and disk images
 os.iso
