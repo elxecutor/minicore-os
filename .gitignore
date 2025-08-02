@@ -11,6 +11,7 @@ kernel.bin
 boot.o
 kernel.o
 mm.o
+shell.o
 
 # ISO and disk images
 os.iso

@@ -7,24 +7,12 @@ A minimal operating system kernel with bootloader written from scratch in x86 As
 - **Multiboot-compliant bootloader** written in x86 Assembly
 - **32-bit protected mode kernel** written in C
 - **Memory management system** with heap allocation
+- **Interactive CLI shell** with keyboard input
 - **VGA text mode display** with colored output
+- **Built-in commands** for system control and debugging
 - **Debug commands** for memory inspection
 - **GRUB2 bootloader support** for easy testing
 - **QEMU integration** for development and testing
-
-## Project Structure
-
-```
-minicore-os/
-├── boot.asm        # Multiboot bootloader (x86 Assembly)
-├── kernel.c        # Main kernel code (C)
-├── mm.c            # Memory management implementation
-├── mm.h            # Memory management header
-├── link.ld         # Linker script for memory layout
-├── Makefile        # Build system
-├── PHASE2.md       # Phase 2 documentation
-└── README.md       # This file
-```
 
 ## Prerequisites
 

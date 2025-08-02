@@ -1,6 +1,10 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "mm.h"
+#include "shell.h"
+#include "idt.h"
+#include "isr.h"
+#include "scheduler.h"
 
 /* Hardware text mode color constants. */
 enum vga_color {
@@ -22,7 +26,7 @@ enum vga_color {
     VGA_COLOR_WHITE = 15,
 };
 
-static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg) {
+uint8_t vga_entry_color(int fg, int bg) {
     return fg | bg << 4;
 }
 
@@ -91,6 +95,17 @@ void terminal_write(const char* data, size_t size) {
 
 void terminal_writestring(const char* data) {
     terminal_write(data, strlen(data));
+}
+
+void terminal_clear(void) {
+    terminal_row = 0;
+    terminal_column = 0;
+    for (size_t y = 0; y < VGA_HEIGHT; y++) {
+        for (size_t x = 0; x < VGA_WIDTH; x++) {
+            const size_t index = y * VGA_WIDTH + x;
+            terminal_buffer[index] = vga_entry(' ', terminal_color);
+        }
+    }
 }
 
 // Simple string comparison function
@@ -205,10 +220,29 @@ void kernel_main(void) {
     mm_init(NULL, 0); // Initialize with default heap
     terminal_writestring("Memory management initialized!\n");
     
-    terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_BROWN, VGA_COLOR_BLACK));
-    terminal_writestring("Bootloader Phase 1 Complete!\n");
+    /* Initialize interrupt system */
+    terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_CYAN, VGA_COLOR_BLACK));
+    terminal_writestring("Initializing interrupt system...\n");
+    idt_init();
+    isr_init();
+    terminal_writestring("IDT and ISR initialized!\n");
+    
+    /* Initialize scheduler and multitasking */
     terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_MAGENTA, VGA_COLOR_BLACK));
-    terminal_writestring("Phase 2: Memory Management Active!\n");
+    terminal_writestring("Initializing scheduler...\n");
+    scheduler_init();
+    
+    /* Set up interrupt handlers but DON'T enable them yet */
+    terminal_writestring("Registering interrupt handlers...\n");
+    register_interrupt_handler(IRQ0, scheduler_tick);
+    register_interrupt_handler(IRQ1, keyboard_interrupt_handler);
+    terminal_writestring("Interrupt handlers registered!\n");
+    
+    terminal_writestring("Note: Interrupts are disabled for stability.\n");
+    terminal_writestring("Use 'enableints' command to enable them when ready.\n");
+    
+    terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_BROWN, VGA_COLOR_BLACK));
+    terminal_writestring("Phase 4: Interrupt system ready (disabled)!\n");
     
     terminal_setcolor(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
     terminal_writestring("\nSystem Information:\n");
@@ -217,7 +251,9 @@ void kernel_main(void) {
     terminal_writestring("- Memory Management: Active (Heap + Free-list)\n");
     terminal_writestring("- Heap Size: 1MB (0x200000 - 0x300000)\n");
     terminal_writestring("- Display: VGA Text Mode (80x25)\n");
-    terminal_writestring("- Paging: Simulated structures\n");
+    terminal_writestring("- Interrupts: Active (IDT + ISR)\n");
+    terminal_writestring("- Multitasking: Cooperative scheduling\n");
+    terminal_writestring("- Tasks: Timer-driven context switching\n");
     
     /* Demonstrate memory management */
     terminal_writestring("\n");
@@ -238,11 +274,22 @@ void kernel_main(void) {
     process_command("memstat");
     
     terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_BROWN, VGA_COLOR_BLACK));
-    terminal_writestring("\nAvailable commands: memstat, memmap, heapdbg, memtest, help\n");
-    terminal_setcolor(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
     terminal_writestring("Phase 2 demonstration complete!\n");
     
-    /* Kernel main loop - for now, just halt */
+    /* Initialize and start the shell */
+    terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_MAGENTA, VGA_COLOR_BLACK));
+    terminal_writestring("Starting CLI Shell with interrupt-driven keyboard...\n");
+    
+    shell_init();
+    
+    /* Enter shell main loop - now with multitasking! */
+    terminal_setcolor(vga_entry_color(VGA_COLOR_LIGHT_BROWN, VGA_COLOR_BLACK));
+    terminal_writestring("Multitasking demo running in background...\n");
+    terminal_setcolor(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
+    
+    shell_run();
+    
+    /* Should never reach here */
     while (1) {
         __asm__ __volatile__("hlt");
     }

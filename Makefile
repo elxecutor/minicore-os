@@ -25,6 +25,14 @@ ISO = os.iso
 BOOT_OBJ = boot.o
 KERNEL_OBJ = kernel.o
 MM_OBJ = mm.o
+SHELL_OBJ = shell.o
+IDT_OBJ = idt.o
+ISR_OBJ = isr.o
+INTERRUPT_OBJ = interrupt.o
+SCHEDULER_OBJ = scheduler.o
+TASK_SWITCH_OBJ = task_switch.o
+
+OBJECTS = $(BOOT_OBJ) $(KERNEL_OBJ) $(MM_OBJ) $(SHELL_OBJ) $(IDT_OBJ) $(ISR_OBJ) $(INTERRUPT_OBJ) $(SCHEDULER_OBJ) $(TASK_SWITCH_OBJ)
 
 # GRUB configuration
 GRUB_CFG = grub.cfg
@@ -56,16 +64,40 @@ $(BOOT_OBJ): boot.asm
 	$(AS) $(ASFLAGS) boot.asm -o $(BOOT_OBJ)
 
 # Compile the kernel
-$(KERNEL_OBJ): kernel.c mm.h
+$(KERNEL_OBJ): kernel.c mm.h shell.h
 	$(CC) $(CFLAGS) -c kernel.c -o $(KERNEL_OBJ)
 
 # Compile memory management
 $(MM_OBJ): mm.c mm.h
 	$(CC) $(CFLAGS) -c mm.c -o $(MM_OBJ)
 
+# Compile shell
+$(SHELL_OBJ): shell.c shell.h mm.h isr.h
+	$(CC) $(CFLAGS) -c shell.c -o $(SHELL_OBJ)
+
+# IDT object
+$(IDT_OBJ): idt.c idt.h
+	$(CC) $(CFLAGS) -c idt.c -o $(IDT_OBJ)
+
+# ISR object
+$(ISR_OBJ): isr.c isr.h idt.h
+	$(CC) $(CFLAGS) -c isr.c -o $(ISR_OBJ)
+
+# Interrupt handlers assembly
+$(INTERRUPT_OBJ): interrupt.asm
+	$(AS) $(ASFLAGS) interrupt.asm -o $(INTERRUPT_OBJ)
+
+# Scheduler object
+$(SCHEDULER_OBJ): scheduler.c scheduler.h isr.h
+	$(CC) $(CFLAGS) -c scheduler.c -o $(SCHEDULER_OBJ)
+
+# Task switching assembly
+$(TASK_SWITCH_OBJ): task_switch.asm
+	$(AS) $(ASFLAGS) task_switch.asm -o $(TASK_SWITCH_OBJ)
+
 # Link the kernel
-$(KERNEL): $(BOOT_OBJ) $(KERNEL_OBJ) $(MM_OBJ) link.ld
-	$(LD) -T link.ld -o $(KERNEL) $(BOOT_OBJ) $(KERNEL_OBJ) $(MM_OBJ) $(LDFLAGS)
+$(KERNEL): $(OBJECTS) link.ld
+	$(LD) -T link.ld -o $(KERNEL) $(OBJECTS) $(LDFLAGS)
 
 # Create GRUB configuration
 $(GRUB_CFG):
@@ -100,7 +132,7 @@ test-kernel: $(KERNEL)
 
 # Clean build artifacts
 clean:
-	rm -f $(BOOT_OBJ) $(KERNEL_OBJ) $(MM_OBJ) $(KERNEL) $(ISO)
+	rm -f $(BOOT_OBJ) $(KERNEL_OBJ) $(MM_OBJ) $(SHELL_OBJ) $(KERNEL) $(ISO)
 	rm -rf $(ISO_DIR)
 	@echo "Cleaned build artifacts"
 
