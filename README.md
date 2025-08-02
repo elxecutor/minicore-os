@@ -183,7 +183,7 @@ This is Phase 1 of the OS development. Future phases might include:
 
 ## License
 
-This project is provided as educational material. Feel free to use and modify for learning purposes.
+For guidelines on contributing, please see the [CONTRIBUTING.md](CONTRIBUTING.md) file. By participating in this project, you are expected to adhere to our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Resources
 
